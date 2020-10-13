@@ -15,7 +15,7 @@ function Invoke-AzAPI {
     $secure_token = ConvertTo-SecureString $token -AsPlainText -Force
     $URL = "https://management.azure.com/subscriptions/$env:AzureSubscription/resourceGroups/$env:resource_group/providers/Microsoft.Web/certificates/$($cert_name)?api-version=2019-08-01"
     $result = Invoke-RestMethod -Method $method -Uri $URL -Authentication Bearer -Token $secure_token -Body $body -ContentType 'application/json'
-    Write-Information "AzAPI Result: $result"
+    Write-Error "AzAPI Result: $result" -ErrorAction 'Continue'
     return $result
 }
 
@@ -30,7 +30,14 @@ function Read-WebAppCert {
         $cert_name = $env:name
     }
 
-    $result = Invoke-AzAPI -method 'GET' -cert_name $cert_name
+    $result = $Null
+    try {
+        $result = Invoke-AzAPI -method 'GET' -cert_name $cert_name
+    }
+    catch {
+        Write-Error "$_" -ErrorAction 'Continue'
+        return $Null
+    }
 
     $state = @{
         name  = $result.name
@@ -48,6 +55,7 @@ function Set-WebAppCert {
 
 function Remove-WebAppCert {
     Invoke-AzAPI -method 'DELETE' -cert_name $env:name
+    Read-WebAppCert
 }
 
 function New-WebAppCert {
