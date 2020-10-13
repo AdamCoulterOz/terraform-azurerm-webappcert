@@ -15,17 +15,26 @@ Install-Module "AzureHelpers"
 ## Usage Example
 
 ```terraform
-module "webapp_data" {
-  source            = "AdamCoulterOz/webappcert/azurerm"
-  
-  resource_group = "myresourcegroup"
-  location = "australiaeast"
-  app_service_plan_id = "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/myresourcegroup2/providers/Microsoft.Web/serverfarms/myappserviceplan"
-  name = "mycertdomain.com"
+provider "shell" {
+  environment = {
+    AzureClientId     = var.client_id
+    AzureTenantId     = var.tenant_id
+    AzureSubscription = var.subscription_id
+  }
 
-  client_id         = "00000000-0000-0000-0000-000000000002"
-  client_secret     = "abc123"
-  tenant_id         = "00000000-0000-0000-0000-000000000003"
-  subscription_id   = "00000000-0000-0000-0000-000000000001"
+  sensitive_environment = {
+    AzureClientSecret = var.client_secret
+  }
+
+  interpreter = ["pwsh", "-Command"]
+}
+
+module "webappcert" {
+  source              = "AdamCoulterOz/webappcert/azurerm"
+  
+  resource_group      = "myresourcegroup"
+  location            = "australiaeast"
+  app_service_plan_id = "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/myresourcegroup2/providers/Microsoft.Web/serverfarms/myappserviceplan"
+  name                = "mycertdomain.com"
 }
 ```
