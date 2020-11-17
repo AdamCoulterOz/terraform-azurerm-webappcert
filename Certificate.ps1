@@ -75,7 +75,7 @@ function New-WebAppCert {
     $errorCount = 0
     while ((-not $resultIsValid) -and ($errorCount -le 15)) {
         $ret = Read-WebAppCert
-        if ((ConvertFrom-Json $ret).thumbprint) {
+        if ($ret -and (ConvertFrom-Json $ret).thumbprint) {
             $resultIsValid = $true
         } else {
             Write-Error "Read-WebAppCert did not return thumbprint, sleeping for 1 second..." -ErrorAction 'Continue'
