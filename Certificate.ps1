@@ -69,5 +69,11 @@ function New-WebAppCert {
     }
     $jsonBody = ConvertTo-Json -InputObject $body -Depth 3
     $result = Invoke-AzAPI -method 'PUT' -body $jsonBody -cert_name $env:name
-    Read-WebAppCert
+    $ret = Read-WebAppCert
+    # Validate output before returning
+    if (-not (ConvertFrom-Json $ret).thumbprint) {
+        throw "Certificate does not have thumbprint, this is not going to work"
+    } else {
+        return $ret
+    }
 }
