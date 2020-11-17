@@ -14,8 +14,9 @@ function Invoke-AzAPI {
     $token = Get-AzToken -AuthMethod ClientSecret
     $secure_token = ConvertTo-SecureString $token -AsPlainText -Force
     $URL = "https://management.azure.com/subscriptions/$env:AzureSubscription/resourceGroups/$env:resource_group/providers/Microsoft.Web/certificates/$($cert_name)?api-version=2019-08-01"
+    Write-Error "About to Invoke-RestMethod $URL..." -ErrorAction 'Continue'
     $result = Invoke-RestMethod -Method $method -Uri $URL -Authentication Bearer -Token $secure_token -Body $body -ContentType 'application/json'
-    Write-Error "AzAPI Result: $result" -ErrorAction 'Continue'
+    Write-Error "AzAPI Result: $(ConvertTo-Json $result)" -ErrorAction 'Continue'
     return $result
 }
 
@@ -69,9 +70,20 @@ function New-WebAppCert {
     }
     $jsonBody = ConvertTo-Json -InputObject $body -Depth 3
     $result = Invoke-AzAPI -method 'PUT' -body $jsonBody -cert_name $env:name
-    $ret = Read-WebAppCert
     # Validate output before returning
-    if (-not (ConvertFrom-Json $ret).thumbprint) {
+    $resultIsValid = $false
+    $errorCount = 0
+    while ((-not $resultIsValid) -and ($errorCount -le 15)) {
+        $ret = Read-WebAppCert
+        if ((ConvertFrom-Json $ret).thumbprint) {
+            $resultIsValid = $true
+        } else {
+            Write-Error "Read-WebAppCert did not return thumbprint, sleeping for 1 second..." -ErrorAction 'Continue'
+            Start-Sleep -Seconds 1
+            $errorCount = $errorCount + 1
+        }
+    }
+    if (-not $resultIsValid) {
         throw "Certificate does not have thumbprint, this is not going to work"
     } else {
         return $ret
